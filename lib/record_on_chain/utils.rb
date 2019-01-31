@@ -23,13 +23,7 @@ module RecordOnChain
         pattern = /[^\w#\$%&@\/?\.+]/
         (pattern =~ passwd).nil? ? true : false
       end
-
-      def CG_EXIT( exit_code , what_you_should_do = "" )
-        puts( "RecordOnChain ** #{get_parent_command_name} ** command is interrupted." ) unless exit_code == 0
-        puts( what_you_should_do ) unless exit_code == 0 && what_you_should_do.empty?
-        exit exit_code
-      end
-
+      
       private
 
       def get_parent_command_name
