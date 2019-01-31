@@ -1,5 +1,3 @@
-require_relative "./contexts"
-
 module RecordOnChain
   module Utils
     class << self
@@ -22,7 +20,7 @@ module RecordOnChain
       end
 
       def validate_password( passwd )
-        pattern = Contexts.password_pattern
+        pattern = /[^\w#\$%&@\/?\.+]/
         (pattern =~ passwd).nil? ? true : false
       end
 
