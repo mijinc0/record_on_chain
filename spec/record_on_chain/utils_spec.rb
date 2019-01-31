@@ -9,6 +9,14 @@ RSpec.describe RecordOnChain::Utils do
     it{ expect( RecordOnChain::Utils.symbolize_hashkeys_rf( hash_data ) ).to eq symbolized }
   end
 
+  describe "self.validate_password" do
+    let(:ok_chars){ "saoh/ji#safa$ogeha+39782f@q287y" }
+    let(:bad_char){ "=" }
+
+    it{ expect( RecordOnChain::Utils.validate_password( ok_chars ) ).to eq true }
+    it{ expect( RecordOnChain::Utils.validate_password( ok_chars + bad_char ) ).to eq false }
+  end
+
   describe "self.CG_EXIT" do
     context "exit 0" do
       # make child process

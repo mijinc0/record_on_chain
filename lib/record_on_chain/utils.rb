@@ -1,3 +1,5 @@
+require_relative "./contexts"
+
 module RecordOnChain
   module Utils
     class << self
@@ -17,6 +19,11 @@ module RecordOnChain
 
       def hex_to_bytes( hex )
         return [hex].pack("H*")
+      end
+
+      def validate_password( passwd )
+        pattern = Contexts.password_pattern
+        (pattern =~ passwd).nil? ? true : false
       end
 
       def CG_EXIT( exit_code , what_you_should_do = "" )
