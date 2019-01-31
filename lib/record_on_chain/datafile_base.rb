@@ -1,4 +1,5 @@
 require "yaml"
+require_relative "./utils"
 
 module RecordOnChain
   module DatafileBase
@@ -58,6 +59,8 @@ module RecordOnChain
       # end
       singleton_class.send( :define_method , :load ) do |filepath|
         hash = YAML.load_file( filepath )
+        # RecordOnChain::Utils
+        hash = Utils.symbolize_hashkeys_rf( hash )
         return from_hash(hash)
       end
 
