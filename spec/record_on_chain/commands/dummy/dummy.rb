@@ -1,6 +1,6 @@
 # this is dummy command
 module RecordOnChain
-  module Commands
+  class Commands
     def self.dummy(args)
       return args[2]
     end

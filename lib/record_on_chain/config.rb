@@ -6,7 +6,7 @@ module RecordOnChain
     define_datafile_class(
       :keyfile_path,
       :recipient,
-      :nodes,
+      :add_node,
     )
   end
 end

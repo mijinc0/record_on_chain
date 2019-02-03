@@ -4,7 +4,7 @@ module RecordOnChain
   class Keyfile
     extend DatafileBase
     define_datafile_class(
-      :network_type,:salt,
+      :network_type,
       :salt,
       :encrypted_secret,
       :public_key,

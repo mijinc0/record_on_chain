@@ -18,10 +18,12 @@ RSpec.describe "define_datafile_class method" do
   end
 
   describe "self.generate and load" do
-    before do
+    before(:all)do
       @path = File.expand_path("../../../tmp/datafile_test.yml",__FILE__)
       RecordOnChain::Dog.generate( @path, "doge", 5 )
     end
+
+    after(:all){ File.delete( @path ) }
 
     subject{ RecordOnChain::Dog.load( @path ) }
     it{ expect( subject.name ).to eq "doge" }

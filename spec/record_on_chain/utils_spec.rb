@@ -16,24 +16,4 @@ RSpec.describe RecordOnChain::Utils do
     it{ expect( RecordOnChain::Utils.validate_password( ok_chars ) ).to eq true }
     it{ expect( RecordOnChain::Utils.validate_password( ok_chars + bad_char ) ).to eq false }
   end
-
-  describe "self.CG_EXIT" do
-    context "exit 0" do
-      # make child process
-      fork do
-        RecordOnChain::Utils.CG_EXIT(0)
-      end
-      process_status = Process.wait2[1]
-      it{ expect( process_status.exitstatus ).to eq 0 }
-    end
-
-    context "exit 1" do
-      # make child process
-      fork do
-        RecordOnChain::Utils.CG_EXIT(1,"something worng")
-      end
-      process_status = Process.wait2[1]
-      it{ expect( process_status.exitstatus ).to eq 1 }
-    end
-  end
 end
