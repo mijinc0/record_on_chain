@@ -4,14 +4,15 @@ require_pairfile
 RSpec.describe RecordOnChain::CommandLoader do
   describe "#load" do
     let(:dirpath){ File.expand_path( "../commands/dummy" , __FILE__ ) }
-    let(:args){ ["alice","bob","carol"] }
+
+    subject{ RecordOnChain::CommandLoader.load( "dummy", dirpath ) }
 
     context "nomal" do
-      it{ expect( RecordOnChain::CommandLoader.load( "dummy", args, dirpath ).call ).to eq args[2] }
+      it{ expect( subject.start ).to eq "this is dummy" }
     end
 
     context "not found" do
-      it{ expect( RecordOnChain::CommandLoader.load( "notfound", args, dirpath ) ).to eq nil }
+      it{ expect( RecordOnChain::CommandLoader.load( "notfound", dirpath ) ).to eq nil }
     end
   end
 end

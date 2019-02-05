@@ -1,22 +1,25 @@
 require "pathname"
 require "securerandom"
 require "highline/import"
+require_relative "./abstract_command"
 require_relative "../keyfile"
 require_relative "../config"
 require_relative "../constants"
 
 module RecordOnChain
-  class Commands
-    class << self
+  module Commands
+    class Init < AbstractCommand
+      def initialize( argv = ARGV )
+        super( argv )
+        set_args_from_argv( "-p" => :path, "-s" => :secret )
+      end
+
       # you can specify maindir path with argument.
-      def init( arg = {} )
+      def start
         # default = homedir
-        path = arg[:path] ? arg[:path] : Dir.home
+        path = @args[:path] ? @args[:path] : Dir.home
         # dir not found
-        unless Dir.exist?( path ) then
-          $stdout.puts( "#{path} directory not found." )
-          return :halt
-        end
+        roc_exit(:halt,"#{path} directory not found.") unless Dir.exist?( path )
 
         # generate maindir
         maindir_path = Pathname.new( path ) + Constants::MAINDIR_NAME
@@ -25,7 +28,7 @@ module RecordOnChain
         # region keyfile
         keyfile_name = ask("please enter new keyfile name"){ |q| q.default = "default" }
         keyfile_path = maindir_path + ( keyfile_name << "_key.yml" )
-        generate_keyfile( keyfile_path , arg[:secret] )
+        generate_keyfile( keyfile_path , @args[:secret] )
 
         # region config
         configfile_name = ask("please enter new config file name"){ |q| q.default = "default" }
@@ -35,8 +38,10 @@ module RecordOnChain
         default_values  = { keyfile_path: keyfile_path.to_s , recipient: keyfile.address, add_node: "" }
         # generate config
         generate_config( configfile_path , default_values )
-
-        return :nomal_end
+        # nomal_end
+        roc_exit( :nomal_end )
+      rescue => e
+        roc_exit( :halt , "#{e.message}" )
       end
 
       private
@@ -45,8 +50,8 @@ module RecordOnChain
         net_type = :testnet
         choose do |menu|
           menu.prompt = "- Please choose network type"
-          menu.choice(:testnet){}
-          menu.choice(:mainnet){ net_type = :mainnet }
+          menu.choice( :testnet ){}
+          menu.choice( :mainnet ){ net_type = :mainnet }
         end
         return net_type
       end
@@ -61,8 +66,7 @@ module RecordOnChain
           say( "Your passwords don't match.Please try again." )
           # incorrect many times
           if count == 4 then
-            $stderr.puts( "5 incorrect password attempts. Please retry at first." )
-            return nil
+            roc_exit( :halt , "5 incorrect password attempts. Please retry at first." )
           end
         end
         return answer
@@ -76,14 +80,16 @@ module RecordOnChain
         end
 
         # check secret size
-        return :halt unless secret.nil? || secret.size == Constants::SECRET_LENGTH
+        unless secret.nil? || secret.size == Constants::SECRET_LENGTH then
+          err = "Illegal secret size. secret should be 32byte-hex_string."
+          roc_exit( :halt , err )
+        end
 
         # decide network_type
         network_type = decide_network_type
 
         # decide password
         password = decide_password
-        return :halt if password.nil?
 
         # cretae cryptor
         cryptor = Crypto::Cryptor.new( Crypto::AES.new )
