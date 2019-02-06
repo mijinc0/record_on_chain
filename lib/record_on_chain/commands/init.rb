@@ -19,7 +19,7 @@ module RecordOnChain
         # default = homedir
         path = @args[:path] ? @args[:path] : Dir.home
         # dir not found
-        roc_exit(:halt,"#{path} directory not found.") unless Dir.exist?( path )
+        raise "#{path} directory not found." unless Dir.exist?( path )
 
         # generate maindir
         maindir_path = Pathname.new( path ) + Constants::MAINDIR_NAME
@@ -65,9 +65,7 @@ module RecordOnChain
           break if answer == conf_answer
           say( "Your passwords don't match.Please try again." )
           # incorrect many times
-          if count == 4 then
-            roc_exit( :halt , "5 incorrect password attempts. Please retry at first." )
-          end
+          raise "5 incorrect password attempts. Please retry at first." if count == 4
         end
         return answer
       end
@@ -75,7 +73,7 @@ module RecordOnChain
       def generate_keyfile( keyfile_path , secret = nil )
         # skip if already exist
         if keyfile_path.exist? then
-          $stderr.puts( "#{keyfile_path.to_s} already exists. skip generate keyfile." )
+          $stdout.puts( "#{keyfile_path.to_s} already exists. skip generate keyfile." )
           return
         end
 
@@ -108,7 +106,7 @@ module RecordOnChain
       def generate_config( configfile_path , default_values )
         # skip if already exist
         if configfile_path.exist? then
-          $stderr.puts( "#{configfile_path.to_s} already exists. skip generate config file." )
+          $stdout.puts( "#{configfile_path.to_s} already exists. skip generate config file." )
           return
         end
         Config.generate(

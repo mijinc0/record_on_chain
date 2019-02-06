@@ -2,6 +2,10 @@ require "bundler/setup"
 require "record_on_chain"
 require "pathname"
 
+# make tmp dir for test
+TMP_DIRPATH = File.expand_path( "../../tmp" , __FILE__ ).freeze
+Dir.mkdir( TMP_DIRPATH ) unless Dir.exist?( TMP_DIRPATH )
+
 # method that requires file that is one-to-one with test file.
 def require_pairfile
   # root path [ ex. /home/user/project/ ]

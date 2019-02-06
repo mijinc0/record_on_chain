@@ -3,10 +3,10 @@ require "fileutils"
 require_pairfile
 
 RSpec.describe "Commands" do
-  describe "start" do
+  describe "init start" do
     let(:tmp_dirpath){ File.expand_path("../../../../tmp",__FILE__) }
     let(:main_dirpath){ "#{tmp_dirpath}/#{RecordOnChain::Constants::MAINDIR_NAME}" }
-    let(:args){ [ "-p" , tmp_dirpath ] }
+    let(:args){ [ "-p", tmp_dirpath, "-s", "4c46b4374ffc2895426f861ff1e45f4a59e1539d85d79574516b9d07e56b5804" ] }
     subject{  RecordOnChain::Commands::Init.new( args ) }
 
     before(:each)do

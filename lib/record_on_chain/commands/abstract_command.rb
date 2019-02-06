@@ -12,9 +12,7 @@ module RecordOnChain
       def set_args_from_argv( context )
         opts = OptionParser.new
         # set to args according to context.
-        context.each do |key,val|
-          opts.on("#{key} VAL"){|v| @args[val] = v}
-        end
+        context.each{ |key,val| opts.on("#{key} VAL"){|v| @args[val] = v} }
         # raise erro if user set unknown option
         opts.parse( @argv )
       rescue OptionParser::InvalidOption => e
@@ -29,13 +27,16 @@ module RecordOnChain
         raise "Unknown exit code #{code}" unless known_codes.include?(code)
         # get child class name
         command_name = self.class.to_s.downcase
+        # puts exit messages
         case code
         when :nomal_end
+          # nomal end
           $stdout.puts( "Exit NOMAL : #{command_name} command execution succeede.\n" )
           exit 0
         when :halt
+          # something happen
           err = "Exit ERROR    : #{command_name} command execution failed.\n" +
-                "ERROR MESSAGE\n" +
+                "[ ERROR MESSAGE ]\n" +
                 "#{msg}"
           warn( err )
           exit 1

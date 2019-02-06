@@ -5,6 +5,12 @@ module RecordOnChain
     class NemController
       @@NET_TYPES = [:testnet , :mainnet].freeze
 
+      def self.address_from_secret( secret , network_type )
+        kp = Nem::Keypair.new( secret )
+        sender_address = Nem::Unit::Address.from_public_key( kp.public , network_type)
+        return sender_address.to_s
+      end
+
       def initialize( node_url_set , net_type = :testnet )
         raise ArgumentError,"Node set must not be empty." if node_url_set.empty?
         raise ArgumentError,"Unknown network type.[:testnet,:mainnet]" unless @@NET_TYPES.include?(net_type)
@@ -47,7 +53,8 @@ module RecordOnChain
         end
       end
 
-      def broadcast_transfer_tx( recipient_str, msg, sender_keypair )
+      def broadcast_transfer_tx( recipient_str, msg, sender_privatekey )
+        sender_keypair = Nem::Keypair.new( sender_privatekey )
         no_sign_tx = Nem::Transaction::Transfer.new( recipient_str, 0, msg )
         announce_request = Nem::Request::Announce.new( no_sign_tx, sender_keypair )
         endpoint = Nem::Endpoint::Transaction.new( @node_pool )
