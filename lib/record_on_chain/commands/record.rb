@@ -1,9 +1,12 @@
 require "pathname"
 require "securerandom"
 require "highline/import"
+require_relative "./abstract_command"
 require_relative "../keyfile"
 require_relative "../config"
+require_relative "../nem_controller"
 require_relative "../constants"
+require_relative "../crypto/cryptor"
 
 module RecordOnChain
   module Commands
@@ -25,7 +28,8 @@ module RecordOnChain
         # send
         result = send_tx
         # exit
-        result[:success?] ? roc_exit( :nomal_end ) : roc_exit( :halt, result[:message] )
+        result[:success?] ? roc_exit( :nomal_end, "tx_hash [ #{result[:tx_hash]} ]" ) :
+                            roc_exit( :halt, "Fail to send tx. #{result[:message]}" )
       rescue => e
         roc_exit( :halt , e.message )
       end
@@ -37,9 +41,10 @@ module RecordOnChain
       def get_dirpath
         # default = homedir
         dir_path = @args[:path] ? @args[:path] : Dir.home
+        pn = Pathname.new( dir_path )
         # dir not found
         raise "#{dir_path} directory not found." unless Dir.exist?( dir_path )
-        return dir_path
+        return ( pn + Constants::MAINDIR_NAME ).to_s
       end
 
       # region load_config & load_keyfile
@@ -71,7 +76,7 @@ module RecordOnChain
 
       def create_nem_controller
         node_urls = get_node_urls
-        return Controller::NemController.new( node_urls , @keyfile.network_type )
+        return NemController.new( node_urls , @keyfile.network_type )
       end
 
       def get_node_urls
@@ -111,12 +116,15 @@ module RecordOnChain
         # get secret from keyfile and password.
         secret = get_secret
         # get address from the secret to use for confirm.
-        sender_address = Controller::NemController.address_from_secret( secret , @keyfile.network_type )
+        sender_address = NemController.address_from_secret( secret , @keyfile.network_type )
         # for confirm
         recipient = @config.recipient
+        # prepare transfer tx
+        @nem.prepare_tx( recipient , msg )
+        # confirm
         confirm_before_send_tx( msg , sender_address , recipient )
         # broadcast tx and return result
-        return @nem.send_transfer_tx( recipient , msg , secret )
+        return @nem.send_transfer_tx( secret )
       end
 
       def get_msg_from_args
@@ -140,21 +148,37 @@ module RecordOnChain
       end
 
       def confirm_before_send_tx( msg , sender_address , recipient )
+        fee = @nem.calc_fee/1000000.to_f
+        add = @nem.get_address_status( sender_address )
+        balance = add[:balance]
+        too_many_xem = 1000 * 1000000
+        caution( "Caution! There are too many xems in this address!　This warning is displayed when it is more than #{too_many_xem/1000000}xem." ) if balance > too_many_xem
+        # multisig not supported
+        raise "Error : Sorry, multisig is not supported." if add[:multisig]
         # background : black 40
         # char       : green 32
         # others     : bold 1 , underline 4
-        $stdout.print( "\e[32m\e[40m\e[1m\e[4m" )
-        $stdout.puts ( "[ confirm ]" )
+        $stdout.print( "\e[32m\e[40m\e[1m" )
+        $stdout.puts ( "!! confirm !!" )
         $stdout.print( "\e[0m" ) # all attributes off
         # print status
-        conf = "sender    : #{sender_address}\n"
-             + "recipient : #{recipient}\n"
-             + "data      : #{msg}\n"
+        # TODO: お金入れすぎの警告表示
+        conf = "sender    : #{sender_address}\n" +
+               "recipient : #{recipient}\n" +
+               "data      : #{msg}\n" +
+               "fee       : #{fee} xem\n"
         $stdout.print( "\e[1m" ) # bold
         $stdout.puts ( conf )
         $stdout.print( "\e[0m" ) # all attributes off
         answer = agree("Are you sure you want to record? (y)es or (n)o")
         raise "Cancel to record." if answer == false
+      end
+
+      def caution( msg )
+        out = "\e[30m\e[43m\e[1m" +
+              msg +
+              "\e[0m\n"
+        warn( out )
       end
     end
   end

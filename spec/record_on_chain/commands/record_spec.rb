@@ -8,9 +8,10 @@ RSpec.describe "Commands" do
   describe "record start" do
     before(:all) do
       # generate test_config.yml and test_key.yml in tmp dir
-      @tmp_dirpath = File.expand_path("../../../../tmp",__FILE__)
-      @key_path    = "#{@tmp_dirpath}/test_key.yml"
-      @conf_path   = "#{@tmp_dirpath}/test_config.yml"
+      @tmp_dirpath  = File.expand_path("../../../../tmp/",__FILE__)
+      @main_dirpath = "#{@tmp_dirpath}/#{RecordOnChain::Constants::MAINDIR_NAME}"
+      @key_path     = "#{@main_dirpath}/test_key.yml"
+      @conf_path    = "#{@main_dirpath}/test_config.yml"
 
       # keyfile
       @raw_key = { network_type: :testnet,
@@ -24,6 +25,7 @@ RSpec.describe "Commands" do
                     recipient: "TA4F2IBLLM5YCTN6MXQ32QBN3HY5C7TVDM72LQ5X",
                     add_node: [ NEM_URL ] }
 
+      Dir.mkdir( @main_dirpath ) unless Dir.exist?( @main_dirpath )
       File.open( @key_path  , "w" ){ |f| f.puts( @raw_key.to_yaml  ) }
       File.open( @conf_path , "w" ){ |f| f.puts( @raw_conf.to_yaml ) }
     end

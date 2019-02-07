@@ -1,23 +1,29 @@
+require "nem"
 require "pathname"
 require "securerandom"
 require "highline/import"
 require_relative "./abstract_command"
+require_relative "../utils"
 require_relative "../keyfile"
 require_relative "../config"
 require_relative "../constants"
+require_relative "../crypto/cryptor"
 
 module RecordOnChain
   module Commands
     class Init < AbstractCommand
       def initialize( argv = ARGV )
         super( argv )
-        set_args_from_argv( "-p" => :path, "-s" => :secret )
+        set_args_from_argv( "-p" => :path,
+                            "-s" => :secret,
+                            "-k" => :keyfile_name,
+                            "-c" => :configfile_name,)
       end
 
       # you can specify maindir path with argument.
       def start
         # default = homedir
-        path = @args[:path] ? @args[:path] : Dir.home
+        path = @args[:path] ? to_absolute_path( @args[:path] ) : Dir.home
         # dir not found
         raise "#{path} directory not found." unless Dir.exist?( path )
 
@@ -26,18 +32,24 @@ module RecordOnChain
         maindir_path.mkdir unless maindir_path.directory?
 
         # region keyfile
-        keyfile_name = ask("please enter new keyfile name"){ |q| q.default = "default" }
-        keyfile_path = maindir_path + ( keyfile_name << "_key.yml" )
+        keyfile_name = @args[:keyfile_name] ? @args[:keyfile_name] : "default"
+        keyfile_name << "_key.yml"
+        keyfile_path = maindir_path + ( keyfile_name )
+        $stdout.puts( "\e[1m [ Start gnerate #{keyfile_name} ]\e[0m" )
         generate_keyfile( keyfile_path , @args[:secret] )
 
         # region config
-        configfile_name = ask("please enter new config file name"){ |q| q.default = "default" }
-        configfile_path = maindir_path + ( configfile_name << "_config.yml" )
+        configfile_name = @args[:configfile_name] ? @args[:configfile_name] : "default"
+        configfile_name << "_config.yml"
+        configfile_path = maindir_path + ( configfile_name )
+        $stdout.puts( "\e[1m [ Start gnerate #{configfile_name} ]\e[0m" )
         # create default_values from loaded keyfile
         keyfile = Keyfile.load( keyfile_path )
-        default_values  = { keyfile_path: keyfile_path.to_s , recipient: keyfile.address, add_node: "" }
+        default_values  = { keyfile_path: keyfile_path.to_s , recipient: keyfile.address, add_node: [] }
         # generate config
         generate_config( configfile_path , default_values )
+        $stdout.puts( "\n" )
+
         # nomal_end
         roc_exit( :nomal_end )
       rescue => e
@@ -46,10 +58,18 @@ module RecordOnChain
 
       private
 
+      def to_absolute_path( path )
+        pn = Pathname.new(path)
+        return path if pn.absolute?
+        # convert relative to absolute
+        return File.expand_path( pn.to_s , Dir.pwd )
+      end
+
       def decide_network_type
         net_type = :testnet
+        $stdout.puts("- Please choose network type")
         choose do |menu|
-          menu.prompt = "- Please choose network type"
+          menu.prompt = ""
           menu.choice( :testnet ){}
           menu.choice( :mainnet ){ net_type = :mainnet }
         end
@@ -59,11 +79,11 @@ module RecordOnChain
       def decide_password
         answer = ""
         5.times do |count|
-          answer = ask("please enter your password"){ |q| q.echo = "*" }
-          conf_answer = ask("please enter your password again (confirm)"){ |q| q.echo = "*" }
+          answer = ask("- Please enter your password"){ |q| q.echo = "*" }
+          conf_answer = ask("- Please enter your password again (confirm)"){ |q| q.echo = "*" }
           # if match, go next step
           break if answer == conf_answer
-          say( "Your passwords don't match.Please try again." )
+          say( "  Your passwords don't match.Please try again." )
           # incorrect many times
           raise "5 incorrect password attempts. Please retry at first." if count == 4
         end
@@ -77,9 +97,9 @@ module RecordOnChain
           return
         end
 
-        # check secret size
-        unless secret.nil? || secret.size == Constants::SECRET_LENGTH then
-          err = "Illegal secret size. secret should be 32byte-hex_string."
+        # check hex_str
+        unless secret.nil? || Utils.hex_str?( secret ) then
+          err = "Illegal secret. secret should be 32byte-hex_string (64chars)."
           roc_exit( :halt , err )
         end
 

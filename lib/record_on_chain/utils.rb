@@ -23,7 +23,14 @@ module RecordOnChain
         pattern = /[^\w#\$%&@\/?\.+]/
         (pattern =~ passwd).nil? ? true : false
       end
-      
+
+      def hex_str?( str )
+        return false if str.size.odd?
+        except_prefix = str.start_with?("0x") ? str[ 1 , str.size-2 ] : str
+        not_hex = /[^\dabcdef]/
+        return !not_hex.match?( except_prefix )
+      end
+
       private
 
       def get_parent_command_name

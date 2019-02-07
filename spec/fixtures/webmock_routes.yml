@@ -1,2 +1,7 @@
+account/get:
+  method: get
+  params:
+    address: NCYP7E7S67LB4G4Y4RJWE7REFBZI4EXJ73MRKIWW
+
 transaction/announce:
   method: post
