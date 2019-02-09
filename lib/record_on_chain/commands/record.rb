@@ -17,11 +17,14 @@ module RecordOnChain
       end
 
       def self.usage
-        output =  " -p <value> => base path       ( default : $HOME              )\n" +
-                  " -c <value> => configfile name ( defailt : default_config.yml )\n" +
-                  " -m <value> => message you want to record ( *mandatory fields )\n\n" ;
-        output << "(e.g.) configfile_name:my_config.yml , message:good_luck!\n"
-        output << "=> $ rochain record -c my_config.yml -m good_luck!\n"
+        output = <<-EOS
+ -p <value> => base path       ( default : $HOME              )
+ -c <value> => configfile name ( defailt : default_config.yml )
+ -m <value> => message you want to record ( *mandatory fields )
+
+ (e.g.) configfile_name:my_config.yml , message:good_luck!
+ => $ rochain record -c my_config.yml -m good_luck!
+        EOS
         return output
       end
 

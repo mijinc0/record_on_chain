@@ -19,13 +19,16 @@ module RecordOnChain
       end
 
       def self.usage
-        output =  " -p <value> => base path         ( default : $HOME              )\n" +
-                  " -s <value> => 32byte hex secret ( default : random hex         )\n" +
-                  " -k <value> => keyfile name      ( default : default_key.yml    )\n" +
-                  " -c <value> => configfile name   ( defailt : default_config.yml )\n" +
-                  " -t         => network type      ( defailt : false -> mainnet   )\n\n";
-        output << "(e.g.) secret:XXX , keyfile_name:mykey.yml , network_type:testnet\n"
-        output << "=> $ rochain init -k mykey.yml -s XXX -t \n"
+        output = <<-EOS
+ -p <value> => base path         ( default : $HOME              )
+ -s <value> => 32byte hex secret ( default : random hex         )
+ -k <value> => keyfile name      ( default : default_key.yml    )
+ -c <value> => configfile name   ( defailt : default_config.yml )
+ -t         => network type      ( defailt : false -> mainnet   )
+
+ (e.g.) secret:XXX , keyfile_name:mykey.yml , network_type:testnet
+ => $ rochain init -k mykey.yml -s XXX -t
+        EOS
         return output
       end
 
