@@ -1,6 +1,7 @@
 require_relative "./abstract_command"
 require_relative "./init"
 require_relative "./record"
+require_relative "./secret"
 require_relative "../utils"
 
 module RecordOnChain
@@ -18,7 +19,7 @@ module RecordOnChain
       end
 
       def start
-        command_names = [ "init", "record", "help" ]
+        command_names = [ "init", "record", "secret", "help" ]
         # command_name : description
         descriptions = {}
         # command_name : usage
@@ -44,10 +45,6 @@ module RecordOnChain
           @cli.blank_line
         end
       end
-
-      private
-
-
     end
   end
 end
