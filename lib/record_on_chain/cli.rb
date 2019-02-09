@@ -10,34 +10,47 @@ module RecordOnChain
     def in ; return @input ; end
     def out; return @output; end
 
-    def enhanced_msg( msg )
-      out = ENHANCE + msg + ATTR_OFF + "\n"
-      @output.puts( out )
+    ATTR_OFF = "\e[0m".freeze
+
+    ENHANCE = "\e[1m".freeze
+    # style      : bold
+
+    UNDERLINE = "\e[4m".freeze
+    # style      : underline
+
+    ERROR = "\e[31m\e[1m".freeze
+    # color      : red
+    # style      : bold
+
+    SUCCESS = "\e[32m\e[1m".freeze
+    # color      : green
+    # style      : bold
+
+    CAUTION = "\e[43m\e[30m\e[1m".freeze
+    # background : yellow
+    # color      : black
+    # style      : bold
+
+    ATTENTION = "\e[40m\e[36m\e[1m"
+    # background : black 40
+    # char       : cyan 36
+    # others     : bold 1
+
+    attributes = [ "enhance", "underline", "error", "success", "caution", "attention" ]
+    attributes.each do |attr|
+      const = self.const_get( attr.upcase )
+      # def enhance_str( str )
+      #   ENHANCE + str + ATTR_OFF
+      # end
+      define_method( "#{attr}_str" ){ |str| const + str + ATTR_OFF }
+      # def puts_enhance_msg( msg )
+      #   puts( enhance_str( msg ) )
+      # end
+      define_method( "puts_#{attr}_msg" ){ |msg| @output.puts( send( "#{attr}_str" , msg ) ) }
     end
 
-    def caution_msg( msg )
-      out = CAUTION + msg + ATTR_OFF + "\n"
-      warn( out )
-    end
-
-    def error_msg( msg )
-      out = ERROR + msg + ATTR_OFF + "\n"
-      warn( out )
-    end
-
-    def success_msg( msg )
-      out = SUCCESS + msg + ATTR_OFF + "\n"
-      @output.puts( out )
-    end
-
-    def attention_msg( msg )
-      out = ATTENTION + msg + ATTR_OFF + "\n"
-      @output.puts( out )
-    end
-
-    def puts_hash( hash )
-      formatted = format_hash( hash )
-      @output.puts( formatted )
+    def blank_line( size= 1 )
+      puts( "\n"*size )
     end
 
     def agree( what )
@@ -67,35 +80,10 @@ module RecordOnChain
       return decrypted_secret
     end
 
-    # region constants
-
-    ATTR_OFF = "\e[0m".freeze
-
-    ENHANCE = "\e[1m".freeze
-    # style      : bold
-
-    ERROR = "\e[31m\e[1m".freeze
-    # color      : red
-    # style      : bold
-
-    SUCCESS = "\e[32m\e[1m".freeze
-    # color      : green
-    # style      : bold
-
-    CAUTION = "\e[43m\e[30m\e[1m".freeze
-    # background : yellow
-    # color      : black
-    # style      : bold
-
-    ATTENTION = "\e[40m\e[36m\e[1m"
-    # background : black 40
-    # char       : cyan 36
-    # others     : bold 1
-
-    private
-
-    def get_highline
-      return HighLine.new( @input, @output )
+    def puts_hash( hash , attribute= nil, indent= 0 )
+      formatted = format_hash( hash , indent )
+      formatted = send( "#{attribute}_str" , formatted ) unless attribute.nil?
+      @output.puts( formatted )
     end
 
     # [ example ]
@@ -105,18 +93,25 @@ module RecordOnChain
     # bob   : bob
     # dylan : dylan
     # carol : carol
-    def format_hash( hash , split_word=" : " )
+    def format_hash( hash, indent= 0, split_word=" : "  )
       # get max :key word length
       max_key_length = hash.map{ |pair| pair.first.size }.max{ |a,b| a <=> b }
       # initialize output
       output = ""
       hash.each do |key,val|
+        output << " " * indent
         output << padding( key.to_s , max_key_length )
         output << split_word
         output << val.to_s
         output << "\n"
       end
       return output
+    end
+
+    private
+
+    def get_highline
+      return HighLine.new( @input, @output )
     end
 
     # If you want to exit this method when password is valid,
@@ -131,7 +126,7 @@ module RecordOnChain
         # valid process
         return answer if valid_process.call( answer )
         # If it is empty, the attempt is incorrect.
-        enhanced_msg( "Your passwords don't match.Please try again." )
+        puts_enhance_msg( "Your passwords don't match.Please try again." )
       end
     end
 

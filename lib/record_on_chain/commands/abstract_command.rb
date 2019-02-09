@@ -2,6 +2,7 @@ require "optparse"
 require_relative "../cli"
 
 module RecordOnChain
+
   module Commands
     # base of command class
     class AbstractCommand
@@ -12,10 +13,6 @@ module RecordOnChain
 
       def start
         raise NotImplementedError.new
-      end
-
-      def help
-        return {}
       end
 
       def squeeze_args_from_argv( val_context= {} , flag_context= {} , argv= ARGV )
@@ -42,14 +39,14 @@ module RecordOnChain
           # nomal end
           out =  "Exit NOMAL : #{@command_name} command execution succeede.\n"
           out << msg
-          @cli.success_msg( out )
+          @cli.puts_success_msg( out )
           exit 0
         when :halt
           # something happen
           err =  "Exit ERROR : #{@command_name} command execution failed.\n"
           err << "[ ERROR MESSAGE ]\n"
           err << "#{msg}"
-          @cli.error_msg( err )
+          @cli.puts_error_msg( err )
           exit 1
         end
       end

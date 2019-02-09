@@ -11,6 +11,20 @@ require_relative "../crypto/default_cryptor"
 module RecordOnChain
   module Commands
     class Record < AbstractCommand
+
+      def self.description
+        return "record message on nem(ver-1) chain"
+      end
+
+      def self.usage
+        output =  " -p <value> => base path       ( default : $HOME              )\n" +
+                  " -c <value> => configfile name ( defailt : default_config.yml )\n" +
+                  " -m <value> => message you want to record ( *mandatory fields )\n\n" ;
+        output << "(e.g.) configfile_name:my_config.yml , message:good_luck!\n"
+        output << "=> $ rochain record -c my_config.yml -m good_luck!\n"
+        return output
+      end
+
       def initialize( argv = ARGV , cli = Cli.new )
         super( argv.first , cli )
         val_context = { "-p" => :path,
@@ -152,18 +166,18 @@ module RecordOnChain
         # caoutino if address has too many xem
         balance = address_info[:balance]
         too_many_xem = 1000 * 1000000
-        @cli.caution_msg( "Caution! There are too many xems in this address!　This warning is displayed when it is more than #{too_many_xem/1000000}xem." ) if balance > too_many_xem
+        @cli.puts_caution_msg( "Caution! There are too many xems in this address!　This warning is displayed when it is more than #{too_many_xem/1000000}xem." ) if balance > too_many_xem
 
         # multisig not supported
         raise "Error : Sorry, multisig is not supported." if address_info[:multisig]
 
         # confirmation info
-        @cli.attention_msg( "!! confirm !!" )
+        @cli.puts_attention_msg( "!! confirm !!" )
         status = { :sender    => sender_address,
                    :recipient => recipient,
                    :data      => @msg,
                    :fee       => "#{fee} xem"}
-        @cli.puts_hash( status )
+        @cli.puts_hash( status , :enhance )
         # if not agree, cancel to send
         raise "Cancel to record." unless @cli.agree( "record" )
       end

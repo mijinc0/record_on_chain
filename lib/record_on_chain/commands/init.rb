@@ -13,6 +13,22 @@ require_relative "../crypto/default_cryptor"
 module RecordOnChain
   module Commands
     class Init < AbstractCommand
+
+      def self.description
+        return "initialize RecordOnChain"
+      end
+
+      def self.usage
+        output =  " -p <value> => base path         ( default : $HOME              )\n" +
+                  " -s <value> => 32byte hex secret ( default : random hex         )\n" +
+                  " -k <value> => keyfile name      ( default : default_key.yml    )\n" +
+                  " -c <value> => configfile name   ( defailt : default_config.yml )\n" +
+                  " -t         => network type      ( defailt : false -> mainnet   )\n\n";
+        output << "(e.g.) secret:XXX , keyfile_name:mykey.yml , network_type:testnet\n"
+        output << "=> $ rochain init -k mykey.yml -s XXX -t \n"
+        return output
+      end
+
       def initialize( argv= ARGV , cli= Cli.new )
         super( argv.first , cli )
         val_context  = { "-p" => :path,
@@ -34,12 +50,12 @@ module RecordOnChain
 
       # you can specify maindir path with argument.
       def start
-        @cli.enhanced_msg( "[ Start gnerate keyfile ]" )
+        @cli.puts_enhance_msg( "[ Start gnerate keyfile ]" )
         generate_keyfile
 
-        @cli.enhanced_msg( "[ Start gnerate configfile ]" )
+        @cli.puts_enhance_msg( "[ Start gnerate configfile ]" )
         generate_config
-        @cli.out.puts( "\n" )
+        @cli.blank_line
 
         # nomal_end
         roc_exit( :nomal_end )
@@ -102,7 +118,7 @@ module RecordOnChain
         # generate
         Keyfile.generate( @keyfile_path.to_s, @network_type, salt, encrypted_secret, public_key, address )
         # display address
-        @cli.attention_msg( "New keyfile address is #{address}" )
+        @cli.puts_attention_msg( "New keyfile address is #{address}" )
       end
 
       def validate_secret_form
