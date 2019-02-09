@@ -1,14 +1,20 @@
 require "digest/md5"
-require_relative './aes'
 require_relative '../utils'
+require_relative '../constants'
 
 module RecordOnChain
   module Crypto
     class Cryptor
-      @@CHECKSUM_LENGTH = 4
-
       def initialize( crypto_engine )
         @crypto_engine = crypto_engine
+      end
+
+      def generate_secret
+        return SecureRandom.hex( Constants::SECRET_LENGTH )
+      end
+
+      def generate_salt
+        return SecureRandom.hex( Constants::SALT_LENGTH )
       end
 
       def encrypt( passwd, hex_salt, hex_secret )
@@ -33,7 +39,7 @@ module RecordOnChain
           return ""
         end
         # validate checksum
-        secret_length = decrypted.size - @@CHECKSUM_LENGTH
+        secret_length = decrypted.size - Constants::CHECKSUM_LENGTH
         secret_part   = decrypted[0,secret_length]
         checksum_part = decrypted[secret_length..-1]
         checksum = calc_checksum( secret_part )
@@ -47,7 +53,7 @@ module RecordOnChain
 
       def calc_checksum( data )
         # MD5 Hash [0..CCHECKSUM_LENGTH]
-        return Digest::MD5.digest( data )[ 0 , @@CHECKSUM_LENGTH ]
+        return Digest::MD5.digest( data )[ 0 , Constants::CHECKSUM_LENGTH ]
       end
     end
   end

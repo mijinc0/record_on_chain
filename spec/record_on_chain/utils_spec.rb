@@ -4,8 +4,9 @@ require_pairfile
 
 RSpec.describe RecordOnChain::Utils do
   describe "self.symbolize_hashkeys_rf" do
-    let(:hash_data){ {"A"=>"alice", "B"=>{"one"=>"bob","two"=>"brown"} } }
+    let(:hash_data ){ {"A"=>"alice", "B"=>{"one"=>"bob","two"=>"brown"} } }
     let(:symbolized){ {A:"alice", B:{ one:"bob", two:"brown" } } }
+
     it{ expect( RecordOnChain::Utils.symbolize_hashkeys_rf( hash_data ) ).to eq symbolized }
   end
 

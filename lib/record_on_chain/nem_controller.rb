@@ -4,10 +4,17 @@ module RecordOnChain
   class NemController
     @@NET_TYPES = [:testnet , :mainnet].freeze
 
+    def self.public_from_secret( secret )
+      return Nem::Keypair.new( secret ).public
+    end
+
+    def self.address_from_public( public_key , network_type )
+      return Nem::Unit::Address.from_public_key( public_key , network_type ).to_s
+    end
+
     def self.address_from_secret( secret , network_type )
-      kp = Nem::Keypair.new( secret )
-      sender_address = Nem::Unit::Address.from_public_key( kp.public , network_type)
-      return sender_address.to_s
+      public_key = public_from_secret( secret )
+      return address_from_public( public_key , network_type )
     end
 
     def initialize( node_url_set , net_type = :testnet )
@@ -38,13 +45,13 @@ module RecordOnChain
     end
 
     def calc_fee
-      raise "Error : Please prepare tx before getting fee." if @tx.nil?
+      prepared?
       fee = Nem::Fee::Transfer.new( @tx )
       return fee.to_i
     end
 
     def send_transfer_tx( private_key )
-      raise "Error : Please prepare tx before sending." if @tx.nil?
+      prepared?
       result = broadcast_transfer_tx( private_key )
       return result
     end
@@ -57,10 +64,14 @@ module RecordOnChain
 
     private
 
+    def prepared?
+      raise "Error : Please prepare tx before getting fee." if @tx.nil?
+    end
+
     # check whether address matches net_type
     def check_address( recipient_str )
       initial = recipient_str.upcase[0]
-      error_msg = "Illegal address. You should make sure address"
+      error_msg = "Illegal address. You should make sure address and network type."
       case initial
       when "T" then
         raise ArgumentError,error_msg  unless @net_type == :testnet

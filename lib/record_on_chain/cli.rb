@@ -12,7 +12,7 @@ module RecordOnChain
 
     def enhanced_msg( msg )
       out = ENHANCE + msg + ATTR_OFF + "\n"
-      @stdout.puts( out )
+      @output.puts( out )
     end
 
     def caution_msg( msg )
@@ -27,7 +27,12 @@ module RecordOnChain
 
     def success_msg( msg )
       out = SUCCESS + msg + ATTR_OFF + "\n"
-      @stdout.puts( out )
+      @output.puts( out )
+    end
+
+    def attention_msg( msg )
+      out = ATTENTION + msg + ATTR_OFF + "\n"
+      @output.puts( out )
     end
 
     def puts_hash( hash )
@@ -35,18 +40,21 @@ module RecordOnChain
       @output.puts( formatted )
     end
 
+    def agree( what )
+      return get_highline.agree( "Are you sure you want to #{what}? (y)es or (n)o" )
+    end
+
     def decide_password
-      hl = HighLine.new( @input, @output )
       user_password = password_operation_base( 5 )do |answer|
         # Enter pass again to see if it is equal
-        conf_answer = hl.ask("- Please enter your password again (confirm)"){ |q| q.echo = "*" }
+        conf_answer = get_highline.ask("- Please enter your password again (confirm)"){ |q| q.echo = "*" }
         answer == conf_answer
       end
       return user_password
     end
 
     def encrypt_with_password( decrypt_func )
-      password_operation_base( 3 ) do |attempt|
+      decrypted_secret = password_operation_base( 3 ) do |attempt|
         decrypted = decrypt_func.call( attempt )
         if decrypted.empty? then
           false # failure
@@ -56,6 +64,7 @@ module RecordOnChain
           true # success
         end
       end
+      return decrypted_secret
     end
 
     # region constants
@@ -78,7 +87,17 @@ module RecordOnChain
     # color      : black
     # style      : bold
 
+    ATTENTION = "\e[40m\e[36m\e[1m"
+    # background : black 40
+    # char       : cyan 36
+    # others     : bold 1
+
     private
+
+    def get_highline
+      return HighLine.new( @input, @output )
+    end
+
     # [ example ]
     # {alice:"alice",bob:"bob",dylan:"dylan",carol:"carol"}
     #
@@ -103,17 +122,16 @@ module RecordOnChain
     # If you want to exit this method when password is valid,
     # you should use "return" in valid_process block.
     def password_operation_base( attempts_count, &valid_process )
-      hl = HighLine.new( @input, @output )
       result = ""
       1.step do |count|
         # incorrect many times
         return nil if count > attempts_count
         # user enter pass here
-        answer = hl.ask("- Please enter your password"){ |q| q.echo = "*" }
+        answer = get_highline.ask("- Please enter your password"){ |q| q.echo = "*" }
         # valid process
         return answer if valid_process.call( answer )
         # If it is empty, the attempt is incorrect.
-        warn( "Your passwords don't match.Please try again." )
+        enhanced_msg( "Your passwords don't match.Please try again." )
       end
     end
 

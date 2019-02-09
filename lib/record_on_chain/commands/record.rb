@@ -6,30 +6,35 @@ require_relative "../keyfile"
 require_relative "../config"
 require_relative "../nem_controller"
 require_relative "../constants"
-require_relative "../crypto/cryptor"
+require_relative "../crypto/default_cryptor"
 
 module RecordOnChain
   module Commands
     class Record < AbstractCommand
-      def initialize( argv = ARGV )
-        super( argv )
-        set_args_from_argv( "-p" => :path, "-c" => :config, "-m" => :msg )
+      def initialize( argv = ARGV , cli = Cli.new )
+        super( argv.first , cli )
+        val_context = { "-p" => :path,
+                        "-c" => :config,
+                        "-m" => :msg }
+        flag_context = {}
+
+        args = squeeze_args_from_argv( val_context , flag_context , argv )
+
+        @maindir_path = get_dirpath( args[:path] ) # String
+        @config       = load_config( args[:config] )
+        @keyfile      = load_keyfile
+        @msg          = args[:msg]
+        @nem          = create_nem_controller
+      rescue => e
+        roc_exit( :halt , "#{e.message}" )
       end
 
       def start
-        # default = homedir
-        dir_path = get_dirpath
-        # load config
-        @config = load_config( dir_path )
-        # load keyfile
-        @keyfile = load_keyfile
-        # create nem_controller
-        @nem = create_nem_controller
         # send
         result = send_tx
         # exit
         result[:success?] ? roc_exit( :nomal_end, "tx_hash [ #{result[:tx_hash]} ]" ) :
-                            roc_exit( :halt, "Fail to send tx. #{result[:message]}" )
+                            roc_exit( :halt     , "Fail to send tx. #{result[:message]}" )
       rescue => e
         roc_exit( :halt , e.message )
       end
@@ -38,20 +43,21 @@ module RecordOnChain
 
       # region get_dirpath
 
-      def get_dirpath
+      def get_dirpath( dir_path )
         # default = homedir
-        dir_path = @args[:path] ? @args[:path] : Dir.home
+        dir_path = dir_path ? dir_path : Dir.home
         pn = Pathname.new( dir_path )
         # dir not found
-        raise "#{dir_path} directory not found." unless Dir.exist?( dir_path )
+        raise "#{dir_path} directory not found." unless pn.directory?
         return ( pn + Constants::MAINDIR_NAME ).to_s
       end
 
       # region load_config & load_keyfile
 
-      def load_config( dir_path )
-        configfile_name = @args[:config] ? @args[:config] : "default_config.yml"
-        configfile_path = "#{dir_path}/#{configfile_name}"
+      def load_config( name )
+        default_confifile_name = Constants::D_DATAFILE_NAME + Constants::D_CONFIGFILE_SUFFIX
+        configfile_name = name ? name : default_confifile_name
+        configfile_path = "#{@maindir_path}/#{configfile_name}"
         return load_datafile( configfile_path , "config" )
       end
 
@@ -60,11 +66,11 @@ module RecordOnChain
       end
 
       # base method of load_config & load_keyfile
-      def load_datafile( datafile_path , name )
+      def load_datafile( datafile_path , class_name )
         # try to load
-        class_name = "RecordOnChain::#{name.capitalize}"
+        full_class_name = "RecordOnChain::#{class_name.capitalize}"
         # get klass => klass.send( :load , path ) => klass.load( path )
-        klass = Object.const_get( class_name )
+        klass = Object.const_get( full_class_name )
         datafile = klass.send( :load , datafile_path )
         # if fail to load becaseu any field is illegal
         raise "Fail to load #{name}." if datafile.nil?
@@ -83,7 +89,8 @@ module RecordOnChain
         # get preset node file path
         preset_filepath = File.expand_path("../../../resources/",__FILE__)
         # testnet? mainnet?
-        preset_filepath << "/preset_#{@keyfile.network_type.to_s}_nodes"
+        network_type = @keyfile.network_type.to_s
+        preset_filepath << "/preset_#{network_type}_nodes"
         # load preset node set
         preset_node_urls = []
         File.foreach( preset_filepath ){ |url| preset_node_urls.push( url.chomp ) }
@@ -109,10 +116,10 @@ module RecordOnChain
         end
       end
 
-      # region record_on_chain
+      # region send_tx
 
       def send_tx
-        msg = get_msg_from_args
+        raise "massage not found. Nothing to record." if @msg.nil? || @msg.empty?
         # get secret from keyfile and password.
         secret = get_secret
         # get address from the secret to use for confirm.
@@ -120,65 +127,45 @@ module RecordOnChain
         # for confirm
         recipient = @config.recipient
         # prepare transfer tx
-        @nem.prepare_tx( recipient , msg )
+        @nem.prepare_tx( recipient , @msg )
         # confirm
-        confirm_before_send_tx( msg , sender_address , recipient )
+        confirm_before_send_tx( sender_address , recipient )
         # broadcast tx and return result
         return @nem.send_transfer_tx( secret )
       end
 
-      def get_msg_from_args
-        raise "massage not found. Nothing to record." if @args[:msg].nil? || @args[:msg].empty?
-        return @args[:msg]
-      end
-
       def get_secret
         answer  = ""
-        cryptor = RecordOnChain::Crypto::Cryptor.new( RecordOnChain::Crypto::AES.new )
-        3.times do |count|
-          answer    = ask("please enter your password"){ |q| q.echo = "*" }
-          decrypted = cryptor.decrypt( answer , @keyfile.salt , @keyfile.encrypted_secret )
-          # If it is NOT empty, the attempt is success.
-          return decrypted unless decrypted.empty?
-          # If it is empty, the attempt is incorrect.
-          say( "Your passwords don't match.Please try again." )
-          # incorrect many times
-          raise "3 incorrect password attempts. Please retry at first." if count == 2
-        end
+        cryptor = RecordOnChain::Crypto::DefaultCryptor.generate
+        decrypt_func = ->( attempt ){ cryptor.decrypt( attempt,  @keyfile.salt , @keyfile.encrypted_secret ) }
+        secret = @cli.encrypt_with_password( decrypt_func )
+        # too many inccorect
+        raise "3 incorrect password attempts. Please retry at first." if secret.nil?
+        # if not nil, success to decrypt
+        return secret
       end
 
-      def confirm_before_send_tx( msg , sender_address , recipient )
+      def confirm_before_send_tx( sender_address , recipient )
         fee = @nem.calc_fee/1000000.to_f
-        add = @nem.get_address_status( sender_address )
-        balance = add[:balance]
-        too_many_xem = 1000 * 1000000
-        caution( "Caution! There are too many xems in this address!　This warning is displayed when it is more than #{too_many_xem/1000000}xem." ) if balance > too_many_xem
-        # multisig not supported
-        raise "Error : Sorry, multisig is not supported." if add[:multisig]
-        # background : black 40
-        # char       : green 32
-        # others     : bold 1 , underline 4
-        $stdout.print( "\e[32m\e[40m\e[1m" )
-        $stdout.puts ( "!! confirm !!" )
-        $stdout.print( "\e[0m" ) # all attributes off
-        # print status
-        # TODO: お金入れすぎの警告表示
-        conf = "sender    : #{sender_address}\n" +
-               "recipient : #{recipient}\n" +
-               "data      : #{msg}\n" +
-               "fee       : #{fee} xem\n"
-        $stdout.print( "\e[1m" ) # bold
-        $stdout.puts ( conf )
-        $stdout.print( "\e[0m" ) # all attributes off
-        answer = agree("Are you sure you want to record? (y)es or (n)o")
-        raise "Cancel to record." if answer == false
-      end
+        address_info = @nem.get_address_status( sender_address )
 
-      def caution( msg )
-        out = "\e[30m\e[43m\e[1m" +
-              msg +
-              "\e[0m\n"
-        warn( out )
+        # caoutino if address has too many xem
+        balance = address_info[:balance]
+        too_many_xem = 1000 * 1000000
+        @cli.caution_msg( "Caution! There are too many xems in this address!　This warning is displayed when it is more than #{too_many_xem/1000000}xem." ) if balance > too_many_xem
+
+        # multisig not supported
+        raise "Error : Sorry, multisig is not supported." if address_info[:multisig]
+
+        # confirmation info
+        @cli.attention_msg( "!! confirm !!" )
+        status = { :sender    => sender_address,
+                   :recipient => recipient,
+                   :data      => @msg,
+                   :fee       => "#{fee} xem"}
+        @cli.puts_hash( status )
+        # if not agree, cancel to send
+        raise "Cancel to record." unless @cli.agree( "record" )
       end
     end
   end

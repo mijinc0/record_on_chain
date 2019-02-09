@@ -7,11 +7,13 @@ require_pairfile
 RSpec.describe "Commands" do
   describe "record start" do
     before(:all) do
+      WebMock.enable!
+
       # generate test_config.yml and test_key.yml in tmp dir
       @tmp_dirpath  = File.expand_path("../../../../tmp/",__FILE__)
       @main_dirpath = "#{@tmp_dirpath}/#{RecordOnChain::Constants::MAINDIR_NAME}"
-      @key_path     = "#{@main_dirpath}/test_key.yml"
-      @conf_path    = "#{@main_dirpath}/test_config.yml"
+      @key_path     = "#{@main_dirpath}/rec_test_key.yml"
+      @conf_path    = "#{@main_dirpath}/rec_test_config.yml"
 
       # keyfile
       @raw_key = { network_type: :testnet,
@@ -32,41 +34,31 @@ RSpec.describe "Commands" do
 
     # remove test_conf & test_key
     after(:all) do
+      WebMock.disable!
+
       File.delete( @key_path )
       File.delete( @conf_path )
     end
 
-    let(:args){ [ "-p" , @tmp_dirpath , "-c" , "test_config.yml" , "-m" , "good_luck" ] }
-    subject{ RecordOnChain::Commands::Record.new( args ) }
+    subject{ RecordOnChain::Commands::Record.new( argv, cli ) }
+
+    let(:cli){ RecordOnChain::Cli.new }
+    let(:argv){ ("record -c rec_test_config.yml -p #{TMP_DIRPATH} -m good_luck!").split(" ") }
 
     before(:each) do
-      # some methods are overridden by mock.
-      # => roc_exit assign exit_code to @exit_code only once
-      allow( subject ).to receive(:roc_exit){ |c , m| c }
-      # => ask return "test" for password
-      allow( subject ).to receive(:ask){ "test" }
-      # => ignore confirm
-      allow( subject ).to receive(:confirm_before_send_tx){ | m, a, r | }
+      allow( subject ).to receive( :roc_exit ){ |c,m| c }
+      allow( subject ).to receive( :confirm_before_send_tx ){ |a,r| } # ignore confirm
     end
 
-    context "nomal_end" do
+    context "nomal" do
+      before(:each){ allow( cli ).to receive( :encrypt_with_password ){ "51f42e592e4bc527f890a5a4b1fad95c0f22c03662f728edf2f7d75d640205b2" } }
+
       it{ expect( subject.start ).to eq :nomal_end }
     end
 
-    context "halt : worng password" do
-      before(:each){ allow( subject ).to receive(:ask){ "worngpass" } }
-      it{ expect( subject.start ).to eq :halt }
-    end
+    context "error : bad secret" do
+      before(:each){ allow( cli ).to receive( :encrypt_with_password ){ nil } }
 
-    context "halt : keyfile not found" do
-      before( :each ){ File.delete( @key_path ) }
-      after( :each ){ File.open( @key_path  , "w" ){ |f| f.puts( @raw_key.to_yaml  ) } }
-      it{ expect( subject.start ).to eq :halt }
-    end
-
-    context "halt : configfile not found" do
-      before( :each ){ File.delete( @conf_path ) }
-      after( :each ){ File.open( @conf_path  , "w" ){ |f| f.puts( @raw_conf.to_yaml  ) } }
       it{ expect( subject.start ).to eq :halt }
     end
   end

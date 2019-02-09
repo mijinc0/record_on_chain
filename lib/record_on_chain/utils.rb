@@ -24,9 +24,12 @@ module RecordOnChain
         (pattern =~ passwd).nil? ? true : false
       end
 
-      def hex_str?( str )
-        return false if str.size.odd?
-        except_prefix = str.start_with?("0x") ? str[ 1 , str.size-2 ] : str
+      def hex_str?( str , byte_size= -1 )
+        str_size = str.size
+        return false if str_size.odd?
+        except_prefix = str.start_with?("0x") ? str[ 1 , str_size-2 ] : str
+        # validate size ( byte_size <= 0 ---> ignore )
+        return false if byte_size > 0 && str_size != byte_size*2
         not_hex = /[^\dabcdef]/
         return !not_hex.match?( except_prefix )
       end
