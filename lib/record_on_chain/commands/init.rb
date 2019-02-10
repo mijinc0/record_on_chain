@@ -1,7 +1,5 @@
 require "nem"
 require "pathname"
-require "securerandom"
-require "highline/import"
 require_relative "./abstract_command"
 require_relative "../utils"
 require_relative "../keyfile"
@@ -43,9 +41,9 @@ module RecordOnChain
         args = squeeze_args_from_argv( val_context , flag_context , argv )
 
         @secret          = args[:secret]
-        @network_type    = args[:testnet] ? :testnet : :mainnet
+        @network_type    = args[:testnet] ? "testnet" : "mainnet"
         @maindir_path    = get_maindir_path( args[:path] ) # Pathname obj
-        @keyfile_path    = get_datafile_path( "keyfile" , args[:keyfile_name] ) # Pathname obj
+        @keyfile_path    = get_datafile_path( "keyfile"    , args[:keyfile_name]    ) # Pathname obj
         @configfile_path = get_datafile_path( "configfile" , args[:configfile_name] ) # Pathname obj
       rescue => e
         roc_exit( :halt , "#{e.message}" )
@@ -58,6 +56,7 @@ module RecordOnChain
 
         @cli.puts_enhance_msg( "[ Start gnerate configfile ]" )
         generate_config
+
         @cli.blank_line
 
         # nomal_end
@@ -74,7 +73,7 @@ module RecordOnChain
         # dir not found
         raise "#{base_path} directory not found." unless Dir.exist?( base_path )
         # generate maindir
-        maindir_path = Pathname.new( base_path ) + Constants::MAINDIR_NAME
+        maindir_path = Pathname.new( base_path ) + MAINDIR_NAME
         # mkdir if not exist
         maindir_path.mkdir unless maindir_path.directory?
         return maindir_path
@@ -89,9 +88,9 @@ module RecordOnChain
       end
 
       def get_datafile_path( type , name )
-        datafile_name = name ? name : Constants::D_DATAFILE_NAME
+        datafile_name = name ? name : D_DATAFILE_NAME
         # add suffix to prevent conflicts
-        datafile_name += Constants.const_get( "D_#{type.upcase}_SUFFIX" )
+        datafile_name += RecordOnChain.const_get( "D_#{type.upcase}_SUFFIX" )
         # to path
         return @maindir_path + datafile_name
       end

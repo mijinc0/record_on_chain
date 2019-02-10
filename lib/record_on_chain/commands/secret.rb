@@ -1,5 +1,6 @@
 require "pathname"
 require_relative "./abstract_command"
+require_relative "./mod_command"
 require_relative "../constants"
 require_relative "../keyfile"
 require_relative "../crypto/default_cryptor"
@@ -29,22 +30,18 @@ module RecordOnChain
 
         args = squeeze_args_from_argv( val_context , flag_context , argv )
 
-        default_keyfile_name = Constants::D_DATAFILE_NAME + Constants::D_KEYFILE_SUFFIX
-
-        default_path = Pathname.new( Dir.home )   +
-                       Constants::MAINDIR_NAME    +
-                       default_keyfile_name       ;
+        default_path = Pathname.new( Dir.home ) +
+                       MAINDIR_NAME   +
+                       D_KEYFILE_NAME ;
         keyfile_path = args[:keyfile_path] ? args[:keyfile_path] : default_path.to_s
 
-        raise "#{keyfile_path} not found." unless File.exist?( keyfile_path )
-
-        @keyfile = Keyfile.load( keyfile_path )
+        @keyfile = load_datafile( keyfile_path , "keyfile" )
       rescue => e
         roc_exit( :halt , "#{e.message}" )
       end
 
       def start
-        secret = get_secret
+        secret = get_secret( @cli, @keyfile )
         msg    = "Secret is [ #{secret} ]"
         roc_exit( :nomal_end , msg )
       rescue => e
@@ -53,16 +50,8 @@ module RecordOnChain
 
       private
 
-      def get_secret
-        answer  = ""
-        cryptor = RecordOnChain::Crypto::DefaultCryptor.generate
-        decrypt_func = ->( attempt ){ cryptor.decrypt( attempt,  @keyfile.salt , @keyfile.encrypted_secret ) }
-        secret = @cli.encrypt_with_password( decrypt_func )
-        # too many inccorect
-        raise "3 incorrect password attempts. Please retry at first." if secret.nil?
-        # if not nil, success to decrypt
-        return secret
-      end
+      include M_LoadDatafile
+      include M_GetSecret
     end
   end
 end

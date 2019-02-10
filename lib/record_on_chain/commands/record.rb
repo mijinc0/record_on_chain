@@ -1,7 +1,6 @@
 require "pathname"
-require "securerandom"
-require "highline/import"
 require_relative "./abstract_command"
+require_relative "./mod_command"
 require_relative "../keyfile"
 require_relative "../config"
 require_relative "../nem_controller"
@@ -66,33 +65,20 @@ module RecordOnChain
         pn = Pathname.new( dir_path )
         # dir not found
         raise "#{dir_path} directory not found." unless pn.directory?
-        return ( pn + Constants::MAINDIR_NAME ).to_s
+        return ( pn + MAINDIR_NAME ).to_s
       end
 
       # region load_config & load_keyfile
+      include M_LoadDatafile
 
       def load_config( name )
-        default_confifile_name = Constants::D_DATAFILE_NAME + Constants::D_CONFIGFILE_SUFFIX
-        configfile_name = name ? name : default_confifile_name
+        configfile_name = name ? name : D_CONFIGFILE_NAME
         configfile_path = "#{@maindir_path}/#{configfile_name}"
         return load_datafile( configfile_path , "config" )
       end
 
       def load_keyfile
         return load_datafile( @config.keyfile_path , "keyfile" )
-      end
-
-      # base method of load_config & load_keyfile
-      def load_datafile( datafile_path , class_name )
-        # try to load
-        full_class_name = "RecordOnChain::#{class_name.capitalize}"
-        # get klass => klass.send( :load , path ) => klass.load( path )
-        klass = Object.const_get( full_class_name )
-        datafile = klass.send( :load , datafile_path )
-        # if fail to load becaseu any field is illegal
-        raise "Fail to load #{name}." if datafile.nil?
-        # success
-        return datafile
       end
 
       # region create_nem_controller
@@ -103,11 +89,9 @@ module RecordOnChain
       end
 
       def get_node_urls
-        # get preset node file path
-        preset_filepath = File.expand_path("../../../resources/",__FILE__)
         # testnet? mainnet?
         network_type = @keyfile.network_type.to_s
-        preset_filepath << "/preset_#{network_type}_nodes"
+        preset_filepath = RESOURCES_DIRPATH + "/preset_#{network_type}_nodes"
         # load preset node set
         preset_node_urls = []
         File.foreach( preset_filepath ){ |url| preset_node_urls.push( url.chomp ) }
@@ -134,11 +118,12 @@ module RecordOnChain
       end
 
       # region send_tx
+      include M_GetSecret
 
       def send_tx
         raise "massage not found. Nothing to record." if @msg.nil? || @msg.empty?
         # get secret from keyfile and password.
-        secret = get_secret
+        secret = get_secret( @cli, @keyfile )
         # get address from the secret to use for confirm.
         sender_address = NemController.address_from_secret( secret , @keyfile.network_type )
         # for confirm
@@ -149,17 +134,6 @@ module RecordOnChain
         confirm_before_send_tx( sender_address , recipient )
         # broadcast tx and return result
         return @nem.send_transfer_tx( secret )
-      end
-
-      def get_secret
-        answer  = ""
-        cryptor = RecordOnChain::Crypto::DefaultCryptor.generate
-        decrypt_func = ->( attempt ){ cryptor.decrypt( attempt,  @keyfile.salt , @keyfile.encrypted_secret ) }
-        secret = @cli.encrypt_with_password( decrypt_func )
-        # too many inccorect
-        raise "3 incorrect password attempts. Please retry at first." if secret.nil?
-        # if not nil, success to decrypt
-        return secret
       end
 
       def confirm_before_send_tx( sender_address , recipient )

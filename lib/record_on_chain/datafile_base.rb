@@ -3,7 +3,10 @@ require_relative "./utils"
 
 module RecordOnChain
   module DatafileBase
-    def define_datafile_class(*status)
+    # status_context = { :var => variable_name , :type => variable_type }
+    def define_datafile_class(*status_context)
+
+      variables = status_context.map{ |c| c[:var] }
 
       # [ presudo code ]
       # def initialize( args )
@@ -12,15 +15,15 @@ module RecordOnChain
       #   ...
       # end
       define_method(:initialize) do |*args|
-        status.each_with_index do |s , index|
+        variables.each_with_index do |var , index|
           # add "@" to sym
-          # [e.g.] :status => :@status
-          var_name = ("@"+s.to_s).to_sym
+          # [e.g.] { var: :name , type: String } => :name => :@name
+          var_name = ( "@#{var}" ).to_sym
           instance_variable_set( var_name, args[index] )
         end
       end
 
-      attr_reader *status
+      attr_reader *variables
 
       # [ presudo code ]
       # def to_yml
@@ -28,7 +31,6 @@ module RecordOnChain
       #   return hash.to_yml
       # end
       define_method(:to_yml) do
-        instance_vars = instance_variables
         hash = {}
         instance_variables.each do |var_sym|
           # delete "@" from instance_variables sym
@@ -47,7 +49,7 @@ module RecordOnChain
       #   File.open( filepath, "w" ){ |f| f.write( yml ) }
       # end
       singleton_class.send( :define_method , :generate ) do |filepath , *args|
-        datafile_obj = new(*args)
+        datafile_obj = new( *args )
         yml = datafile_obj.to_yml
         File.open( filepath , "w" ){ |f| f.write( yml ) }
       end
@@ -66,22 +68,31 @@ module RecordOnChain
 
       # [ presudo code ]
       # def self.from_hash( hash )
-      #   return nil if hash[ :status1 ].nil?
+      #
+      #   types = { status1: String , status2: String , status3: Integer ,...}
+      #
+      #   return nil if hash[ :status1 ].nil? || hash[ :status1 ].class != types[ :status1 ]
       #   @status1 = hash[;status1]
       #
-      #   return nil if hash[ :status2 ].nil?
+      #   return nil if hash[ :status2 ].nil?|| hash[ :status2 ].class != types[ :status2 ]
       #   @status2 = hash[;status2]
       #
-      #   return nil if hash[ :status3 ].nil?
+      #   return nil if hash[ :status3 ].nil?|| hash[ :status3 ].class != types[ :status3 ]
       #   @status3 = hash[;status3]
       #   ...
       # end
       singleton_class.send( :define_method , :from_hash ) do |hash|
-        args = []
-        status.each do |s|
-          # If there is missing status in hash, fail to generate object and return nil
-          return nil if hash[s].nil?
-          args.push( hash[s] )
+        args  = []
+        
+        types = status_context.map{ |c| c[:type] }
+
+        variables.each_with_index do |var,index|
+          value = hash[ var ]
+          # If there is missing status in hash, return nil without generating the object
+          return nil if value.nil?
+          # If type of field does not match type of context, return nil without generating the object
+          return nil unless value.class == types[ index ]
+          args.push( value )
         end
         return new(*args)
       end

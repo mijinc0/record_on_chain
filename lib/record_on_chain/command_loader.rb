@@ -1,12 +1,11 @@
 require_relative "./cli"
+require_relative "./constants"
 
 module RecordOnChain
   class CommandLoader
-    @@COMMANDS_DIRPATH = File.expand_path( "../commands" , __FILE__ ).freeze
-
-    def self.load( name, dirpath= @@COMMANDS_DIRPATH, argv= ARGV, cli= Cli.new )
+    def self.load( name, dirpath= COMMANDS_DIRPATH, argv= ARGV, cli= Cli.new )
       # except abstract sourcefile
-      return nil if name.include?("abstract")
+      return nil if name.start_with?("abstract","mod")
       # expand command file path
       filepath = File.expand_path( name, dirpath ) << ".rb"
       # check file existance

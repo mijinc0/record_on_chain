@@ -9,17 +9,17 @@ module RecordOnChain
     end
 
     def self.address_from_public( public_key , network_type )
-      return Nem::Unit::Address.from_public_key( public_key , network_type ).to_s
+      return Nem::Unit::Address.from_public_key( public_key , network_type.to_sym ).to_s
     end
 
     def self.address_from_secret( secret , network_type )
       public_key = public_from_secret( secret )
-      return address_from_public( public_key , network_type )
+      return address_from_public( public_key , network_type.to_sym )
     end
 
     def initialize( node_url_set , net_type = :testnet )
       raise ArgumentError,"Node set must not be empty." if node_url_set.empty?
-      raise ArgumentError,"Unknown network type.[:testnet,:mainnet]" unless @@NET_TYPES.include?(net_type)
+      raise ArgumentError,"Unknown network type.[:testnet,:mainnet]" unless @@NET_TYPES.include?(net_type.to_sym)
 
       # make node_pool from node_set
       node_objects = []
@@ -28,7 +28,7 @@ module RecordOnChain
         node_objects.push( node_object )
       end
       @node_pool = Nem::NodePool.new( node_objects )
-      @net_type  = net_type
+      @net_type  = net_type.to_sym
     end
 
     def get_address_status( address )

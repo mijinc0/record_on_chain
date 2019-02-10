@@ -23,8 +23,8 @@ RSpec.describe "Commands" do
       before(:each){ allow( cli ).to receive( :decide_password ){ "password" } }
 
       after(:each) do
-        File.delete( "#{TMP_DIRPATH}/#{RecordOnChain::Constants::MAINDIR_NAME}/init_test_key.yml" )
-        File.delete( "#{TMP_DIRPATH}/#{RecordOnChain::Constants::MAINDIR_NAME}/init_test_config.yml" )
+        File.delete( "#{TMP_DIRPATH}/#{RecordOnChain::MAINDIR_NAME}/init_test_key.yml" )
+        File.delete( "#{TMP_DIRPATH}/#{RecordOnChain::MAINDIR_NAME}/init_test_config.yml" )
       end
 
       it{ expect( subject.start ).to eq :nomal_end }
@@ -32,8 +32,8 @@ RSpec.describe "Commands" do
       it do
         subject.start
         # check with existance
-        File.exist?( "#{TMP_DIRPATH}/#{RecordOnChain::Constants::MAINDIR_NAME}/init_test_key.yml" )
-        File.exist?( "#{TMP_DIRPATH}/#{RecordOnChain::Constants::MAINDIR_NAME}/init_test_config.yml" )
+        File.exist?( "#{TMP_DIRPATH}/#{RecordOnChain::MAINDIR_NAME}/init_test_key.yml" )
+        File.exist?( "#{TMP_DIRPATH}/#{RecordOnChain::MAINDIR_NAME}/init_test_config.yml" )
       end
     end
 

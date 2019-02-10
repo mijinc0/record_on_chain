@@ -38,7 +38,7 @@ module RecordOnChain
         when :nomal_end
           # nomal end
           out =  "Exit NOMAL : #{@command_name} command execution succeede.\n"
-          out << msg
+          out << "#{msg}"
           @cli.puts_success_msg( out )
           exit 0
         when :halt

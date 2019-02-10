@@ -4,9 +4,9 @@ module RecordOnChain
   class Config
     extend DatafileBase
     define_datafile_class(
-      :keyfile_path,
-      :recipient,
-      :add_node,
+      { :var => :keyfile_path , :type => String },
+      { :var => :recipient    , :type => String },
+      { :var => :add_node     , :type => Array  }
     )
   end
 end

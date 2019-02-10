@@ -117,7 +117,6 @@ module RecordOnChain
     # If you want to exit this method when password is valid,
     # you should use "return" in valid_process block.
     def password_operation_base( attempts_count, &valid_process )
-      result = ""
       1.step do |count|
         # incorrect many times
         return nil if count > attempts_count

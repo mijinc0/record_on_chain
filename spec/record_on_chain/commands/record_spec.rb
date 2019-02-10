@@ -11,12 +11,12 @@ RSpec.describe "Commands" do
 
       # generate test_config.yml and test_key.yml in tmp dir
       @tmp_dirpath  = File.expand_path("../../../../tmp/",__FILE__)
-      @main_dirpath = "#{@tmp_dirpath}/#{RecordOnChain::Constants::MAINDIR_NAME}"
+      @main_dirpath = "#{@tmp_dirpath}/#{RecordOnChain::MAINDIR_NAME}"
       @key_path     = "#{@main_dirpath}/rec_test_key.yml"
       @conf_path    = "#{@main_dirpath}/rec_test_config.yml"
 
       # keyfile
-      @raw_key = { network_type: :testnet,
+      @raw_key = { network_type: "testnet",
                    salt: "fca58e7c7c94803f41f8d291cfecd293",
                    encrypted_secret: "e362014c06b2ddf6ce8c9fd20308415481f740c9185a9b6e17d1e4192a5ac19e31c69a936e3480c70a19a6f5df8b9a97",
                    public_key: "28930ac41c7d4efb1b0329dbf11229f1103e484103b68898640d7843907a5d58",
