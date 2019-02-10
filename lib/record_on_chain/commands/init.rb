@@ -124,12 +124,12 @@ module RecordOnChain
       end
 
       def validate_secret_form
-        raise "Illegal secret. secret should be 32byte-hex_string (64chars)." unless @secret.nil? || Utils.hex_str?( @secret , 32 )
+        raise "Illegal secret. Secret should be 32byte-hex_string (64chars)." unless @secret.nil? || Utils.hex_str?( @secret , 32 )
       end
 
       def decide_password
         pass = @cli.decide_password
-        raise "5 incorrect password attempts. Please retry at first." if pass.nil?
+        raise "5 incorrect password attempts." if pass.nil?
         return pass
       end
 

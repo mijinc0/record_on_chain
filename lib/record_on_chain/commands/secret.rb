@@ -42,7 +42,7 @@ module RecordOnChain
 
       def start
         secret = get_secret( @cli, @keyfile )
-        msg    = "Secret is [ #{secret} ]"
+        msg    = "Secret [ #{secret} ]"
         roc_exit( :nomal_end , msg )
       rescue => e
         roc_exit( :halt , "#{e.message}" )

@@ -28,7 +28,7 @@ module RecordOnChain
         decrypt_func = ->( attempt ){ cryptor.decrypt( attempt,  keyfile.salt, keyfile.encrypted_secret ) }
         secret = cli.encrypt_with_password( decrypt_func )
         # too many inccorect
-        raise "3 incorrect password attempts. Please retry at first." if secret.nil?
+        raise "3 incorrect password attempts." if secret.nil?
         # if not nil, success to decrypt
         return secret
       end

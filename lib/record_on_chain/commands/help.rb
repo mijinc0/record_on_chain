@@ -34,11 +34,11 @@ module RecordOnChain
 
         @cli.puts_enhance_msg( "== Record on Chain HELP ==" )
         @cli.blank_line
-        @cli.puts_underline_msg("descriptions")
+        @cli.puts_underline_msg("description")
         @cli.puts_hash( descriptions , nil , 1 )
         @cli.blank_line
 
-        @cli.puts_underline_msg("usages")
+        @cli.puts_underline_msg("usage")
         examples.each do | c_name, usage |
           @cli.out.puts( " [ #{c_name} ]" )
           @cli.out.puts( "#{usage}" )

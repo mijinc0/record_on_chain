@@ -121,7 +121,7 @@ module RecordOnChain
       include M_GetSecret
 
       def send_tx
-        raise "massage not found. Nothing to record." if @msg.nil? || @msg.empty?
+        raise "Massage not found. Nothing to record." if @msg.nil? || @msg.empty?
         # get secret from keyfile and password.
         secret = get_secret( @cli, @keyfile )
         # get address from the secret to use for confirm.
@@ -155,8 +155,8 @@ module RecordOnChain
                    :data      => @msg,
                    :fee       => "#{fee} xem"}
         @cli.puts_hash( status , :enhance )
-        # if not agree, cancel to send
-        raise "Cancel to record." unless @cli.agree( "record" )
+        # if not agree, stop recording
+        raise "Stop recording." unless @cli.agree( "record" )
       end
     end
   end
