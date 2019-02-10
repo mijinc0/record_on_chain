@@ -17,9 +17,9 @@ module RecordOnChain
       return address_from_public( public_key , network_type.to_sym )
     end
 
-    def initialize( node_url_set , net_type = :testnet )
+    def initialize( node_url_set , network_type = :testnet )
       raise ArgumentError,"Node set must not be empty." if node_url_set.empty?
-      raise ArgumentError,"Unknown network type.[:testnet,:mainnet]" unless @@NET_TYPES.include?(net_type.to_sym)
+      raise ArgumentError,"Unknown network type.[:testnet,:mainnet]" unless @@NET_TYPES.include?(network_type.to_sym)
 
       # make node_pool from node_set
       node_objects = []
@@ -28,7 +28,7 @@ module RecordOnChain
         node_objects.push( node_object )
       end
       @node_pool = Nem::NodePool.new( node_objects )
-      @net_type  = net_type.to_sym
+      @network_type  = network_type.to_sym
     end
 
     def get_address_status( address )
@@ -40,8 +40,9 @@ module RecordOnChain
 
     def prepare_tx( recipient_str, msg )
       check_address( recipient_str )
+      modified_address = modify_address( recipient_str )
       # NOTE: Timestamp is set to -10 sec from Time.now.It prevent FAILURE_TIMESTAMP_TOO_FAR_IN_FUTURE
-      @tx = Nem::Transaction::Transfer.new( recipient_str, 0, msg, timestamp: Time.now() -10 )
+      @tx = Nem::Transaction::Transfer.new( modified_address, 0, msg, timestamp: Time.now() -10, network: @network_type )
     end
 
     def calc_fee
@@ -68,15 +69,20 @@ module RecordOnChain
       raise "Error : Please prepare tx before getting fee." if @tx.nil?
     end
 
-    # check whether address matches net_type
+    # delete sigins & upcase
+    def modify_address( address )
+      return address.gsub( /\W/ , "" ).upcase
+    end
+
+    # check whether address matches network_type
     def check_address( recipient_str )
       initial = recipient_str.upcase[0]
       error_msg = "Illegal address. You should make sure address and network type."
       case initial
       when "T" then
-        raise ArgumentError,error_msg  unless @net_type == :testnet
+        raise ArgumentError,error_msg  unless @network_type == :testnet
       when "N" then
-        raise ArgumentError,error_msg  unless @net_type == :mainnet
+        raise ArgumentError,error_msg  unless @network_type == :mainnet
       else
         raise ArgumentError,error_msg
       end
