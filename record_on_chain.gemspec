@@ -42,6 +42,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "webmock", "~> 3.5.1"
 
   spec.add_dependency 'highline', '2.0.0'
-  spec.add_dependency 'digest-sha3', '~> 1.1'
   spec.add_dependency 'nem-ruby', '~> 0.0.12'
 end
