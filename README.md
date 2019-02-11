@@ -20,7 +20,7 @@ To use this gem you need xem to be consumed as a fee.
 And you can use `help` command.
 
 ```
-$ bundle exec rochain help
+$ rochain help
 
 == Record on Chain HELP ==
 
@@ -36,7 +36,7 @@ descriptions
 #### init
 
 ```
-$ bundle exec rochain init
+$ rochain init
 ```
 
 This command generates `keyfile` and `configfile`. By default, these files are generated in the `$HOME/.ro_chain` directory.
@@ -92,7 +92,7 @@ The meaning of each item of the config file is as follows.
 #### record
 
 ```
-$ bundle exec rochain record -m good_luck!
+$ rochain record -m good_luck!
 
 - Please enter your password
 **************
@@ -114,7 +114,7 @@ If you want to use the specified file, you need to use the option.
 
 e.g. `$HOME/user_dir/my_dir/.ro_chain/my_config.yml`
 ```
-$ bundle exec rochain record -p $HOME/user_dir/my_dir -c my_config.yml -m good_luck!
+$ rochain record -p $HOME/user_dir/my_dir -c my_config.yml -m good_luck!
 ```
 
 #### secret
@@ -122,7 +122,7 @@ $ bundle exec rochain record -p $HOME/user_dir/my_dir -c my_config.yml -m good_l
 Restore the private key from the key file. You will need a password to restore.
 
 ```
-$ bundle exec rochain secret
+$ rochain secret
 
 - Please enter your password
 **************
