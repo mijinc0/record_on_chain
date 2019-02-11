@@ -65,7 +65,7 @@ root
 ```
 
 `keyfile`  
-Information such as encrypted secret key is written in the key file. **Please note that the private key is not encrypted if the password is empty.**
+Information such as encrypted secret key is written in the key file. **Please note that if the password is empty, the private key is protected only by salt. This is not secure.**
 
 `configfile`  
 Information such as the destination of the data is written in the config file.
@@ -147,6 +147,14 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Dependencies
 
+#### [ CryptoCurrency ]
+
+**nem**
+
+https://nem.io/
+
+#### [ gems ]
+
 **highline**
 
 https://github.com/JEG2/highline
@@ -157,7 +165,7 @@ https://github.com/44uk/nem-ruby
 
 I also use the source code of the above repository for testing.
 
-___Thank you your development!___
+___Thank you for your development!___
 
 ## Contributing
 
