@@ -4,6 +4,8 @@ require_relative "./constants"
 module RecordOnChain
   class CommandLoader
     def self.load( name, dirpath= COMMANDS_DIRPATH, argv= ARGV, cli= Cli.new )
+      # command name not found
+      raise "Command name not found. See 'rochain help'" if name.nil?
       # except abstract sourcefile
       return nil if name.start_with?("abstract","mod")
       # expand command file path
